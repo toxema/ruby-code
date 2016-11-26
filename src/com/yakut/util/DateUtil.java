@@ -25,6 +25,7 @@ public class DateUtil {
 
     public static void uyu() {
         uyu(500);
+          uyu(500);
     }
 
     public static void sleep(int time) {

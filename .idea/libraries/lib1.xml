@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="lib1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/dist/lib/javax.persistence-2.0.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/dist/lib/poi-3.2-FINAL-20081019.jar!/" />
+      <root url="jar://$PROJECT_DIR$/dist/lib/ExcellAktar.jar!/" />
+      <root url="jar://$PROJECT_DIR$/dist/lib/DateChooser.jar!/" />
+      <root url="jar://$PROJECT_DIR$/dist/lib/jaybird-full-2.1.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/dist/lib/log4j-1.2.15.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

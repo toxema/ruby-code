@@ -1,0 +1,43 @@
+17:31:29  INFO (Database.java:102) - SQL:select * from gunluk_hareket
+17:31:29 ERROR (Database.java:105) - org.firebirdsql.jdbc.FBSQLException: GDS Exception. 335544569. Dynamic SQL Error
+SQL error code = -204
+Table unknown
+GUNLUK_HAREKET
+At line 1, column 15
+17:31:31 ERROR (ExceptionHandler.java:26) - java.lang.NullPointerException
+17:31:43  INFO (Database.java:102) - SQL:select * from tables
+17:31:43 ERROR (Database.java:105) - org.firebirdsql.jdbc.FBSQLException: GDS Exception. 335544569. Dynamic SQL Error
+SQL error code = -204
+Table unknown
+TABLES
+At line 1, column 15
+17:31:44 ERROR (ExceptionHandler.java:26) - java.lang.NullPointerException
+17:31:59  INFO (Database.java:102) - SQL:select * from ogs_gunluk_hareket
+17:31:59 ERROR (Database.java:105) - org.firebirdsql.jdbc.FBSQLException: GDS Exception. 335544569. Dynamic SQL Error
+SQL error code = -204
+Table unknown
+OGS_GUNLUK_HAREKET
+At line 1, column 15
+17:32:01 ERROR (ExceptionHandler.java:26) - java.lang.NullPointerException
+17:32:10  INFO (Database.java:102) - SQL:select * from grup
+17:32:34  INFO (Database.java:102) - SQL:select * from personel
+17:32:34 ERROR (Database.java:105) - org.firebirdsql.jdbc.FBSQLException: GDS Exception. 335544569. Dynamic SQL Error
+SQL error code = -204
+Table unknown
+PERSONEL
+At line 1, column 15
+17:32:35 ERROR (ExceptionHandler.java:26) - java.lang.NullPointerException
+17:32:42  INFO (Database.java:102) - SQL:select * from hareket
+17:32:42 ERROR (Database.java:105) - org.firebirdsql.jdbc.FBSQLException: GDS Exception. 335544569. Dynamic SQL Error
+SQL error code = -204
+Table unknown
+HAREKET
+At line 1, column 15
+17:32:43 ERROR (ExceptionHandler.java:26) - java.lang.NullPointerException
+17:34:12  INFO (Database.java:102) - SQL:select * from ogs_hareket
+17:36:42  INFO (Database.java:102) - SQL:show tables;
+17:36:42 ERROR (Database.java:105) - org.firebirdsql.jdbc.FBSQLException: GDS Exception. 335544569. Dynamic SQL Error
+SQL error code = -104
+Token unknown - line 1, column 1
+show
+17:36:44 ERROR (ExceptionHandler.java:26) - java.lang.NullPointerException

@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="lib2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/CevherJant/lib/log4j-1.2.15.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CevherJant/lib/jaybird-full-2.1.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CevherJant/lib/poi-3.2-FINAL-20081019.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CevherJant/lib/ExcellAktar.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CevherJant/lib/DateChooser.jar!/" />
+      <root url="jar://$PROJECT_DIR$/CevherJant/lib/javax.persistence-2.0.3.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

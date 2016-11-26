@@ -1,0 +1,512 @@
+CREATE PROCEDURE SPD_TARIHHAR (
+    ilk_sicil varchar(12),
+    son_sicil varchar(12),
+    ilk_tarih timestamp,
+    son_tarih timestamp,
+    depart varchar(5),
+    bol varchar(5),
+    gor varchar(5),
+    ucret varchar(5),
+    s_kodu varchar(5))
+returns (
+    sicil_no varchar(12),
+    adi varchar(15),
+    soyadi varchar(20),
+    tarih date,
+    giris_saati time,
+    cikis_saati time,
+    aciklama varchar(100),
+    departman varchar(25),
+    bolum varchar(25),
+    gorev varchar(25),
+    ucret_turu varchar(25))
+as
+declare variable fld_hareket varchar(1);
+declare variable fld_hartarih timestamp;
+declare variable har_say integer;
+declare variable son_hareket varchar(1);
+declare variable son_hartarih date;
+declare variable son_giris time;
+declare variable son_cikis time;
+declare variable per_sicil varchar(12);
+declare variable bas_tar date;
+declare variable bit_tar date;
+declare variable tatil_adi varchar(50);
+declare variable tatil_top integer;
+declare variable bul smallint;
+declare variable post_vard varchar(5);
+declare variable izin_adi varchar(25);
+declare variable post_vard2 varchar(5);
+declare variable post_vard3 varchar(5);
+declare variable post_vard4 varchar(5);
+declare variable post_vard5 varchar(5);
+declare variable post_vard6 varchar(5);
+declare variable post_vard7 varchar(5);
+declare variable vard_durum varchar(5);
+declare variable sql_code varchar(250);
+declare variable giris_tar date;
+declare variable kart_gec date;
+declare variable cik_tar date;
+declare variable dept2 varchar(25);
+declare variable bol2 varchar(25);
+declare variable gor2 varchar(25);
+declare variable ucret2 varchar(25);
+declare variable gun_tarih timestamp;
+declare variable tarih_kont timestamp;
+declare variable adi2 varchar(15);
+declare variable soyadi2 varchar(20);
+declare variable har_sql varchar(250);
+declare variable kartbasmaz integer;
+declare variable isciktar date;
+begin
+  HAR_SAY=0;
+  KARTBASMAZ=0 ;
+
+  SQL_CODE='';
+  if (:DEPART<>'') then
+  SQL_CODE=:SQL_CODE||'AND(PR.DEPARTMAN='''||:DEPART||''')';
+    if (:BOL<>'') then
+    SQL_CODE=SQL_CODE||'AND(PR.BOLUM='''||:BOL||''')';
+      if (:GOR<>'') then
+      SQL_CODE=SQL_CODE||'AND(PR.GOREVI='''||:GOR||''')';
+        if (:UCRET<>'') then
+        SQL_CODE=SQL_CODE||'AND(PR.UCRET_TURU='''||:UCRET||''')';
+  /* PERSONEL LİSTESİ */
+
+  if (CAST(ILK_TARIH AS TIME)=CAST('00:00:01' AS TIME)) then
+  BEGIN
+    GUN_TARIH=CAST((CAST(ILK_TARIH AS DATE)-1)||' '||CAST('20:00:00' AS TIME) AS TIMESTAMP);
+    TARIH_KONT=CAST((CAST(ILK_TARIH AS DATE)-1)||' '||CAST('23:59:59' AS TIME) AS TIMESTAMP);
+    HAR_SQL='((GH.TARIH BETWEEN '''||:GUN_TARIH||''' AND '''||:TARIH_KONT||''')AND(GH.HAREKET='''||'G'||'''))OR';
+  END
+    ELSE
+    HAR_SQL='';
+  FOR
+    execute statement 'SELECT PR.SICIL_NO, PR.ADI, PR.SOYADI, PR.KART_GEC_TAR, PR.ISE_GIR_TAR, PR.ISE_CIK_TAR, DP.DEPART_ADI, BL.BOLUM_ADI, GR.GOREV_ADI, UC.UCRET_ADI ,PR.KART_BASMAZ,ISE_CIK_TAR FROM PERSONEL PR'||
+    ' LEFT JOIN DEPARTMAN DP ON(DP.DEPART_KODU=PR.DEPARTMAN)'||
+    ' LEFT JOIN BOLUM BL ON(BL.BOLUM_KODU=PR.BOLUM)'||
+    ' LEFT JOIN GOREV GR ON(GR.GOREV_KODU=PR.GOREVI)'||
+    ' LEFT JOIN UCRET UC ON(UC.UCRET_KODU=PR.UCRET_TURU)'||
+    ' WHERE ((PR.SICIL_NO>='''||:ILK_SICIL||''')AND(PR.SICIL_NO<='''||:SON_SICIL||'''))'||
+    ' AND(PR.KAYITTURU='''||1||''')'||
+    ' AND  (PR.ISE_CIK_TAR>'''||CAST(:ILK_TARIH AS DATE)||''' OR PR.ISE_CIK_TAR='''||'30.12.1899'||''')  '||
+    'AND(PR.SIRKET_KODU='''||:S_KODU||''')'||
+    :SQL_CODE||
+    ' ORDER BY PR.SICIL_NO'
+     INTO :PER_SICIL, :ADI2, :SOYADI2, :KART_GEC, :GIRIS_TAR, :CIK_TAR,:DEPT2, :BOL2, :GOR2, :UCRET2,:kartbasmaz,:ISCIKTAR
+  DO
+    BEGIN
+      SON_HAREKET='';  GIRIS_SAATI=NULL; CIKIS_SAATI=NULL;
+      HAR_SAY=0;
+      /*((GH.TARIH BETWEEN :GUN_TARIH AND :TARIH_KONT)AND(GH.HAREKET='G'))OR*/
+      FOR
+        execute statement 'SELECT GH.TARIH, GH.HAREKET  FROM GUNLUK_HAREKET GH'||
+        ' WHERE (GH.SICIL_NO='''||:PER_SICIL||''')AND'||
+        ' ('||:HAR_SQL||
+        ' (GH.TARIH BETWEEN '''||:ILK_TARIH||''' AND '''||:SON_TARIH||'''))'||
+        ' ORDER BY GH.SICIL_NO, GH.TARIH'
+        INTO  :FLD_HARTARIH, :FLD_HAREKET
+      DO
+        BEGIN
+          HAR_SAY=HAR_SAY+1;
+          IF(HAR_SAY=1)THEN
+          BEGIN
+             BAS_TAR=CAST(ILK_TARIH AS DATE);
+             BIT_TAR=CAST(FLD_HARTARIH AS DATE)-1;
+             WHILE(BAS_TAR<=BIT_TAR)DO
+             BEGIN
+              BUL=0;
+              TARIH=:BAS_TAR;
+              SICIL_NO=:PER_SICIL;
+              GIRIS_SAATI=NULL;
+              CIKIS_SAATI=NULL;
+              ACIKLAMA='İZİNSİZ';
+
+              if(kartbasmaz=1) then
+                ACIKLAMA='';
+
+
+              IZIN_ADI='-1';
+               IF(((:GIRIS_TAR=CAST('30.12.1899' as DATE))OR(:GIRIS_TAR<=:BAS_TAR))AND
+               ((:CIK_TAR=CAST('30.12.1899' as DATE))OR(:CIK_TAR>:BAS_TAR)))THEN
+               BEGIN
+                  FOR
+                   SELECT PS.PAZARTESI1,PS.SALI1,PS.CARSAMBA1,PS.PERSEMBE1,PS.CUMA1,PS.CUMARTESI1,PS.PAZAR1 FROM POSTPERSON PP
+                   LEFT JOIN POSTA PS ON(PS.POSTA_KODU=PP.POSTA_KODU)
+                   WHERE (PP.SICIL_NO=:PER_SICIL)AND(:TARIH BETWEEN PP.TARIH AND PP.BIT_TAR)
+                   INTO :POST_VARD,:POST_VARD2,:POST_VARD3,:POST_VARD4,:POST_VARD5,:POST_VARD6,:POST_VARD7
+                  DO
+                   BEGIN
+                     VARD_DURUM=' ';
+                     if (EXTRACT(WEEKDAY FROM :TARIH)=0)THEN
+                     VARD_DURUM=:POST_VARD7;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=1)THEN
+                     VARD_DURUM=:POST_VARD;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=2)THEN
+                     VARD_DURUM=:POST_VARD2;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=3)THEN
+                     VARD_DURUM=:POST_VARD3;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=4)THEN
+                     VARD_DURUM=:POST_VARD4;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=5)THEN
+                     VARD_DURUM=:POST_VARD5;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=6)THEN
+                     VARD_DURUM=:POST_VARD6;
+
+                     if (((SUBSTRING(VARD_DURUM FROM 1 FOR 1)='C')OR(SUBSTRING(VARD_DURUM FROM 1 FOR 1)='H'))AND(BUL=0)) then
+                     BEGIN
+                       ACIKLAMA='HAFTA TATİLİ';
+                       BUL=1;
+                     END
+                   END
+
+
+                   IF(BUL=0)THEN
+                   BEGIN
+                     FOR
+                       SELECT TATIL_ADI,COUNT(*) AS TOPLAM FROM TATIL_TANIMLARI
+                       WHERE (TARIH=:TARIH)
+                       GROUP BY TATIL_ADI
+                       INTO :TATIL_ADI, :TATIL_TOP
+                     DO
+                       BEGIN
+                         if ((TATIL_TOP>0)AND(BUL=0)) then
+                         BEGIN
+                           ACIKLAMA=:TATIL_ADI;
+                           BUL=1;
+                         END
+                       END
+                   END
+
+              IF(BUL=0)THEN
+              BEGIN
+               FOR
+                SELECT IZ.IZIN_ADI FROM IZIN_GIRIS IG
+                LEFT JOIN IZIN IZ ON(IZ.IZIN_KODU=IG.IZIN_KODU)
+                WHERE (IG.SICIL_NO=:PER_SICIL)AND(:TARIH BETWEEN IG.PNT_BAS_TAR AND IG.PNT_BIT_TAR)
+                INTO :IZIN_ADI
+               DO
+                 BEGIN
+                   if ((IZIN_ADI<>'-1')AND(BUL=0)) then
+                   BEGIN
+                     ACIKLAMA=:IZIN_ADI;
+                     BUL=1;
+                   END
+                 END
+              END
+              ADI=:ADI2;
+              SOYADI=:SOYADI2;
+              DEPARTMAN=:DEPT2;
+              BOLUM=:BOL2;
+              GOREV=:GOR2;
+              UCRET_TURU=:UCRET2;
+              BAS_TAR=BAS_TAR+1;
+              SUSPEND;
+             END
+              ELSE
+              BAS_TAR=BAS_TAR+1;
+            END/*WHILE*/
+          TARIH=NULL;
+          END
+
+          if ((HAR_SAY>1)AND((CAST(FLD_HARTARIH AS DATE)-SON_HARTARIH)>1)) then
+          BEGIN
+             if (SON_HAREKET='G') then
+             BEGIN
+              CIKIS_SAATI=NULL;
+              ACIKLAMA='ÇIKIŞ HAREKETİ YOK';
+             END
+               ELSE
+               BEGIN
+                 GIRIS_SAATI=NULL;
+                 ACIKLAMA='GİRİŞ SAATİ YOK';
+               END
+             DEPARTMAN=:DEPT2;
+             BOLUM=:BOL2;
+             GOREV=:GOR2;
+             UCRET_TURU=:UCRET2;
+             ADI=:ADI2;
+             SOYADI=:SOYADI2;
+             SUSPEND;
+             BAS_TAR=SON_HARTARIH+1;
+             BIT_TAR=CAST(FLD_HARTARIH AS DATE)-1;
+
+             WHILE(BAS_TAR<=BIT_TAR)DO
+             BEGIN
+              SICIL_NO=:PER_SICIL;
+              TARIH=:BAS_TAR;
+              GIRIS_SAATI=NULL;
+              CIKIS_SAATI=NULL;
+              ACIKLAMA='İZİNSİZ';
+              if(kartbasmaz=1) then
+                ACIKLAMA='';
+              IZIN_ADI='-1';
+              BUL=0;
+               IF(((:GIRIS_TAR=CAST('30.12.1899' as DATE))OR(:GIRIS_TAR<=:BAS_TAR))AND
+               ((:CIK_TAR=CAST('30.12.1899' as DATE))OR(:CIK_TAR>:BAS_TAR)))THEN
+               BEGIN
+              FOR
+                   SELECT PS.PAZARTESI1,PS.SALI1,PS.CARSAMBA1,PS.PERSEMBE1,PS.CUMA1,PS.CUMARTESI1,PS.PAZAR1 FROM POSTPERSON PP
+                   LEFT JOIN POSTA PS ON(PS.POSTA_KODU=PP.POSTA_KODU)
+                   WHERE (PP.SICIL_NO=:PER_SICIL)AND(:TARIH BETWEEN PP.TARIH AND PP.BIT_TAR)
+                   INTO :POST_VARD,:POST_VARD2,:POST_VARD3,:POST_VARD4,:POST_VARD5,:POST_VARD6,:POST_VARD7
+                  DO
+                   BEGIN
+                     VARD_DURUM=' ';
+                     if (EXTRACT(WEEKDAY FROM :TARIH)=0)THEN
+                     VARD_DURUM=:POST_VARD7;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=1)THEN
+                     VARD_DURUM=:POST_VARD;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=2)THEN
+                     VARD_DURUM=:POST_VARD2;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=3)THEN
+                     VARD_DURUM=:POST_VARD3;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=4)THEN
+                     VARD_DURUM=:POST_VARD4;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=5)THEN
+                     VARD_DURUM=:POST_VARD5;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=6)THEN
+                     VARD_DURUM=:POST_VARD6;
+
+                     if (((SUBSTRING(VARD_DURUM FROM 1 FOR 1)='C')OR(SUBSTRING(VARD_DURUM FROM 1 FOR 1)='H'))AND(BUL=0)) then
+                     BEGIN
+                       ACIKLAMA='HAFTA TATİLİ';
+                       BUL=1;
+                     END
+                   END
+
+
+                   IF(BUL=0)THEN
+                   BEGIN
+                     FOR
+                       SELECT TATIL_ADI,COUNT(*) AS TOPLAM FROM TATIL_TANIMLARI
+                       WHERE (TARIH=:TARIH)
+                       GROUP BY TATIL_ADI
+                       INTO :TATIL_ADI, :TATIL_TOP
+                     DO
+                       BEGIN
+                         if ((TATIL_TOP>0)AND(BUL=0)) then
+                         BEGIN
+                           ACIKLAMA=:TATIL_ADI;
+                           BUL=1;
+                         END
+                       END
+                   END
+
+              IF(BUL=0)THEN
+              BEGIN
+               FOR
+                SELECT IZ.IZIN_ADI FROM IZIN_GIRIS IG
+                LEFT JOIN IZIN IZ ON(IZ.IZIN_KODU=IG.IZIN_KODU)
+                WHERE (IG.SICIL_NO=:PER_SICIL)AND(:TARIH BETWEEN IG.PNT_BAS_TAR AND IG.PNT_BIT_TAR)
+                INTO :IZIN_ADI
+               DO
+                 BEGIN
+                   if ((IZIN_ADI<>'-1')AND(BUL=0)) then
+                   BEGIN
+                     ACIKLAMA=:IZIN_ADI;
+                     BUL=1;
+                   END
+                 END
+              END
+              DEPARTMAN=:DEPT2;
+              BOLUM=:BOL2;
+              GOREV=:GOR2;
+              UCRET_TURU=:UCRET2;
+              ADI=:ADI2;
+              SOYADI=:SOYADI2;
+              BAS_TAR=BAS_TAR+1;
+              SUSPEND;
+             END
+              ELSE
+              BAS_TAR=BAS_TAR+1;
+            END/*WHILE*/
+          TARIH=NULL;
+          END
+            if (FLD_HAREKET='G') then
+            BEGIN
+              if (FLD_HAREKET=SON_HAREKET) then
+              BEGIN
+                GIRIS_SAATI=:SON_GIRIS;
+                CIKIS_SAATI=NULL;
+                ACIKLAMA='ÇIKIŞ HAREKETİ YOK';
+                TARIH=:SON_HARTARIH;
+                SICIL_NO=:PER_SICIL;
+                --ACIKLAMA='';
+                DEPARTMAN=:DEPT2;
+                BOLUM=:BOL2;
+                GOREV=:GOR2;
+                UCRET_TURU=:UCRET2;
+                ADI=:ADI2;
+                SOYADI=:SOYADI2;
+                SUSPEND;
+              END
+
+              GIRIS_SAATI=CAST(:FLD_HARTARIH AS TIME);
+              if (CAST(:FLD_HARTARIH AS TIME)>=CAST('20:00:00' AS TIME)) then
+                TARIH=CAST(:FLD_HARTARIH AS DATE)+1;
+                  ELSE
+                  TARIH=CAST(:FLD_HARTARIH AS DATE);
+
+              SICIL_NO=PER_SICIL;
+
+            END /* HAREKET GİRİŞ */
+
+                ELSE
+                BEGIN
+
+                  SICIL_NO=:PER_SICIL;
+                  CIKIS_SAATI=CAST(:FLD_HARTARIH AS TIME);
+                  if ((SON_HAREKET=FLD_HAREKET)OR(HAR_SAY=1)OR(TARIH IS NULL)) then
+                  BEGIN
+                    GIRIS_SAATI=NULL;
+                    TARIH=CAST(:FLD_HARTARIH AS DATE);
+                    ACIKLAMA='GİRİŞ HAREKETİ YOK';
+                    /*SUREM=NULL;*/
+                  END
+                    ELSE
+                    ACIKLAMA='';
+                     /*if (NOT(GIRIS_SAATI IS NULL)) then
+                     BEGIN
+                      if (CIKIS_SAATI<GIRIS_SAATI) then
+                      BEGIN
+                       SUREM=CAST(((CAST('23:59:59' AS TIME)-GIRIS_SAATI)+(CIKIS_SAATI))AS VARCHAR(20));
+                      END
+                        ELSE
+                        SUREM=CAST((CIKIS_SAATI-GIRIS_SAATI) AS VARCHAR(20));
+                     SURE=:SUREM;
+                     END */
+
+                  DEPARTMAN=:DEPT2;
+                  BOLUM=:BOL2;
+                  GOREV=:GOR2;
+                  UCRET_TURU=:UCRET2;
+                  ADI=:ADI2;
+                  SOYADI=:SOYADI2;
+                  if ((TARIH>=CAST(ILK_TARIH AS DATE))AND(TARIH<=CAST(SON_TARIH AS DATE))) then
+                  SUSPEND;
+/*                  TARIH=NULL;*/
+                END
+
+                SON_GIRIS=GIRIS_SAATI;
+                SON_CIKIS=CIKIS_SAATI;
+                SON_HAREKET=FLD_HAREKET;
+                SON_HARTARIH=TARIH;
+      END   /*FOR*/
+        if (SON_HAREKET='G') then
+        BEGIN
+          if (CAST(:FLD_HARTARIH AS TIME)>=CAST('20:00:00' AS TIME)) then
+          TARIH=CAST(:FLD_HARTARIH AS DATE)+1;
+            ELSE
+            TARIH=CAST(:FLD_HARTARIH AS DATE);
+          GIRIS_SAATI=CAST(:FLD_HARTARIH AS TIME);
+          CIKIS_SAATI=NULL;
+          ACIKLAMA='ÇIKIŞ HAREKETİ YOK';
+          DEPARTMAN=:DEPT2;
+          BOLUM=:BOL2;
+          GOREV=:GOR2;
+          UCRET_TURU=:UCRET2;
+          ADI=:ADI2;
+          SOYADI=:SOYADI2;
+          if ((TARIH>=CAST(ILK_TARIH AS DATE))AND(TARIH<=CAST(SON_TARIH AS DATE))) then
+          SUSPEND;
+        END
+          if (HAR_SAY=0) then
+          BAS_TAR=ILK_TARIH;
+           ELSE
+           BAS_TAR=TARIH+1;
+
+          BIT_TAR=CAST(SON_TARIH AS DATE);
+
+            WHILE(BAS_TAR<=BIT_TAR)DO
+            BEGIN
+              SICIL_NO=:PER_SICIL;
+              TARIH=:BAS_TAR;
+              GIRIS_SAATI=NULL;
+              CIKIS_SAATI=NULL;
+              ACIKLAMA='İZİNSİZ';
+              if(kartbasmaz=1) then
+                ACIKLAMA='';
+              IZIN_ADI='-1';
+              BUL=0;
+               IF(((:GIRIS_TAR=CAST('30.12.1899' as DATE))OR(:GIRIS_TAR<=:BAS_TAR))AND
+               ((:CIK_TAR=CAST('30.12.1899' as DATE))OR(:CIK_TAR>:BAS_TAR)))THEN
+               BEGIN
+                 FOR
+                   SELECT PS.PAZARTESI1,PS.SALI1,PS.CARSAMBA1,PS.PERSEMBE1,PS.CUMA1,PS.CUMARTESI1,PS.PAZAR1 FROM POSTPERSON PP
+                   LEFT JOIN POSTA PS ON(PS.POSTA_KODU=PP.POSTA_KODU)
+                   WHERE (PP.SICIL_NO=:PER_SICIL)AND(:TARIH BETWEEN PP.TARIH AND PP.BIT_TAR)
+                   INTO :POST_VARD,:POST_VARD2,:POST_VARD3,:POST_VARD4,:POST_VARD5,:POST_VARD6,:POST_VARD7
+                  DO
+                   BEGIN
+                     VARD_DURUM=' ';
+                     if (EXTRACT(WEEKDAY FROM :TARIH)=0)THEN
+                     VARD_DURUM=:POST_VARD7;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=1)THEN
+                     VARD_DURUM=:POST_VARD;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=2)THEN
+                     VARD_DURUM=:POST_VARD2;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=3)THEN
+                     VARD_DURUM=:POST_VARD3;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=4)THEN
+                     VARD_DURUM=:POST_VARD4;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=5)THEN
+                     VARD_DURUM=:POST_VARD5;
+                     ELSE if (EXTRACT(WEEKDAY FROM :TARIH)=6)THEN
+                     VARD_DURUM=:POST_VARD6;
+
+                     if (((SUBSTRING(VARD_DURUM FROM 1 FOR 1)='C')OR(SUBSTRING(VARD_DURUM FROM 1 FOR 1)='H'))AND(BUL=0)) then
+                     BEGIN
+                       ACIKLAMA='HAFTA TATİLİ';
+                       BUL=1;
+                     END
+                   END
+
+                   IF(BUL=0)THEN
+                   BEGIN
+                     FOR
+                       SELECT TATIL_ADI,COUNT(*) AS TOPLAM FROM TATIL_TANIMLARI
+                       WHERE (TARIH=:TARIH)
+                       GROUP BY TATIL_ADI
+                       INTO :TATIL_ADI, :TATIL_TOP
+                     DO
+                       BEGIN
+                         if ((TATIL_TOP>0)AND(BUL=0)) then
+                         BEGIN
+                           ACIKLAMA=:TATIL_ADI;
+                           BUL=1;
+                         END
+                       END
+                   END
+
+              IF(BUL=0)THEN
+              BEGIN
+               FOR
+                SELECT IZ.IZIN_ADI FROM IZIN_GIRIS IG
+                LEFT JOIN IZIN IZ ON(IZ.IZIN_KODU=IG.IZIN_KODU)
+                WHERE (IG.SICIL_NO=:PER_SICIL)AND(:TARIH BETWEEN IG.PNT_BAS_TAR AND IG.PNT_BIT_TAR)
+                INTO :IZIN_ADI
+               DO
+                 BEGIN
+                   if ((IZIN_ADI<>'-1')AND(BUL=0)) then
+                   BEGIN
+                     ACIKLAMA=:IZIN_ADI;
+                     BUL=1;
+                   END
+                 END
+              END
+              DEPARTMAN=:DEPT2;
+              BOLUM=:BOL2;
+              GOREV=:GOR2;
+              UCRET_TURU=:UCRET2;
+              ADI=:ADI2;
+              SOYADI=:SOYADI2;
+              BAS_TAR=BAS_TAR+1;
+              SUSPEND;
+            END
+             ELSE
+             BAS_TAR=BAS_TAR+1;
+            END/*WHILE*/
+    END
+
+end

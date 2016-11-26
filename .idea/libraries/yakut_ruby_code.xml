@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="yakut-ruby-code">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/rubydist/yakut-ruby-code.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -12,7 +12,7 @@ import java.util.Objects;
  * @author yakut
  */
 public class Hareket {
-
+  
             String sicil;
             String kart;
             Date tarih;
@@ -24,6 +24,7 @@ public class Hareket {
             boolean islem = false;
 
             public Hareket() {
+                
             }
 
             public Hareket(String sicil, String kart, Date tarih, String posta) {
